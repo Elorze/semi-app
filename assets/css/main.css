@@ -1,4 +1,5 @@
 @import "@nuxt/ui";
+@import "tailwindcss";
 
 .container-size {
   width: 100%;
