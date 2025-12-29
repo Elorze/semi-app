@@ -439,6 +439,8 @@ const handleTokenTransfer = async () => {
       chain: useChain.chain.name.toLowerCase(),
       data: JSON.stringify(receipt) as any,
       memo: formState.memo,
+      sender_address: user.user?.evm_chain_address || "",
+      receiver_address: formState.recipient as string,
     });
 
     toast.add({

@@ -432,6 +432,8 @@ const HandleDeployToken = async () => {
       chain: useChain.chain.name.toLowerCase(),
       data: JSON.stringify(receipt) as any,
       memo: "",
+      sender_address: useUser.user?.evm_chain_address || "",
+      receiver_address: TOKEN_FACTORY_CONTRACT[useChain.chain.id],
     });
 
     step.value = 3;
