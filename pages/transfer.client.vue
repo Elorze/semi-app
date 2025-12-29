@@ -74,6 +74,18 @@
               />
           </UFormField>
 
+          <UFormField name="senderNote" :label="i18n.text['Sender Note'] + '(optional)'" class="mt-4">
+            <UInput
+                variant="subtle"
+                size="xl"
+                class="w-full flex-1"
+                v-model="formState.senderNote"
+                :placeholder="i18n.text['Please enter sender note']"
+                :ui="{ base: 'w-full' }"
+                :disabled="initializing"
+              />
+          </UFormField>
+
           <div class="mt-4">
             <div class="text-gray-400 text-sm">{{ i18n.text["Balance"] }}</div>
             <div class="flex items-center gap-2">
@@ -185,6 +197,7 @@ import {
   getUserByHandleOrPhone,
   getRemainingGasCredits,
   uploadTransaction,
+  uploadTransactionWithGasCredits,
 } from "~/utils/semi_api";
 import { isGasSponsorshipChain } from "~/utils/gas_sponsorship";
 import { isPhoneNumber } from "~/utils";
@@ -195,9 +208,10 @@ interface FormState {
   to: string;
   recipient: string | null;
   amount: string;
-  code: string[];
+  code: any[];
   token: TokenClass | undefined;
   memo: string;
+  senderNote: string;
   remainingFreeTransactions: number;
   gasEstimate: string;
 }
@@ -238,6 +252,7 @@ const formState = reactive<FormState>({
   remainingFreeTransactions: 0,
   gasEstimate: "0",
   memo: "",
+  senderNote: "",
 });
 
 // 计算属性
@@ -310,6 +325,7 @@ const resetForm = () => {
   step.value = 1;
   formState.recipient = null;
   formState.code = [...DEFAULT_CODE];
+  formState.senderNote = "";
 };
 
 // 业务逻辑函数
@@ -432,16 +448,23 @@ const handleTokenTransfer = async () => {
       return this.toString();
     };
 
-    await uploadTransaction({
+    const uploadData = {
       tx_hash: receipt.receipt.transactionHash,
       gas_used: receipt.actualGasCost.toString(),
       status: receipt.success ? "success" : "failed",
       chain: useChain.chain.name.toLowerCase(),
       data: JSON.stringify(receipt) as any,
       memo: formState.memo,
+      sender_note: formState.senderNote,
       sender_address: user.user?.evm_chain_address || "",
       receiver_address: formState.recipient as string,
-    });
+    };
+
+    if (transferParams.sponsorFee) {
+      await uploadTransactionWithGasCredits(uploadData);
+    } else {
+      await uploadTransaction(uploadData);
+    }
 
     toast.add({
       title: i18n.text["Transfer Success"],
