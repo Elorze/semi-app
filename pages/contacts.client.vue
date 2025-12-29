@@ -6,7 +6,13 @@
     </UButton>
 
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-2xl font-bold">{{ i18n.text["Contacts"] }}</h1>
+      <div class="flex flex-col gap-1">
+        <h1 class="text-2xl font-bold">{{ i18n.text["Contacts"] }}</h1>
+        <div v-if="userStore.user?.handle" class="text-sm text-gray-500 flex items-center gap-1">
+          <UIcon name="ci:user" size="14" />
+          <span>{{ i18n.text["Handle"] }}: {{ userStore.user.handle }}</span>
+        </div>
+      </div>
       <UButton color="primary" variant="ghost" @click="addContact"
         class="flex items-center gap-1 text-sm text-primary hover:underline">
         {{ i18n.text["Add Contact"] }}
