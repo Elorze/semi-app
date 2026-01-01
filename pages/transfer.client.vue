@@ -74,7 +74,7 @@
               />
           </UFormField>
 
-          <UFormField name="senderNote" :label="i18n.text['Sender Note'] + '(optional)'" class="mt-4">
+          <UFormField name="senderNote" :label="i18n.text['Sender Note']" class="mt-4">
             <UInput
                 variant="subtle"
                 size="xl"
