@@ -315,7 +315,7 @@ const defaultFormState = {
   minter: "",
   initMint: "",
   code: [...DEFAULT_CODE],
-  icon: "https://ik.imagekit.io/soladata/kg8ddpwy_r5he8h1o9",
+  icon: "https://datastore.sola.day/kg8ddpwy_r5he8h1o9",
   maxSupply: "",
 };
 
@@ -473,7 +473,7 @@ const handleConfirm = () => {
     initMint: "",
     maxSupply: "",
     code: [...DEFAULT_CODE],
-    icon: "https://ik.imagekit.io/soladata/kg8ddpwy_r5he8h1o9",
+    icon: "https://datastore.sola.day/kg8ddpwy_r5he8h1o9",
   });
 
   // 重置其他状态
