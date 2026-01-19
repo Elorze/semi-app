@@ -138,12 +138,30 @@ const badgeTabs = computed<TabsItem[]>(() => [
   },
 ]);
 
-const activeMainTab = ref<"badges" | "nfts">((route.query.tab as "badges" | "nfts") || "badges");
-const activeSubTabIndex = ref(
-  badgeTabs.value.findIndex((t) => t.slot === route.query.subtab) !== -1
-    ? badgeTabs.value.findIndex((t) => t.slot === route.query.subtab)
-    : 0
-);
+type MainTab = "badges" | "nfts";
+type BadgeSubTab = "owned" | "created" | "pending";
+
+const firstQueryValue = (v: unknown): string | undefined => {
+  if (Array.isArray(v)) return typeof v[0] === "string" ? v[0] : undefined;
+  return typeof v === "string" ? v : undefined;
+};
+
+const parseMainTab = (v: unknown): MainTab => {
+  const tab = firstQueryValue(v);
+  return tab === "nfts" ? "nfts" : "badges";
+};
+
+const parseSubTab = (v: unknown): BadgeSubTab => {
+  const subtab = firstQueryValue(v);
+  return subtab === "created" || subtab === "pending" || subtab === "owned" ? subtab : "owned";
+};
+
+const activeMainTab = ref<MainTab>(parseMainTab(route.query.tab));
+const activeSubTabIndex = ref(() => {
+  const slot = parseSubTab(route.query.subtab);
+  const idx = badgeTabs.value.findIndex((t) => t.slot === slot);
+  return idx === -1 ? 0 : idx;
+})() as Ref<number>;
 
 const updateMainTab = (tab: "badges" | "nfts") => {
   activeMainTab.value = tab;
@@ -151,7 +169,13 @@ const updateMainTab = (tab: "badges" | "nfts") => {
 };
 
 watch(activeSubTabIndex, (newVal) => {
-  const subtab = badgeTabs.value[newVal]?.slot;
+  const clampedIndex = Math.max(0, Math.min(newVal, badgeTabs.value.length - 1));
+  if (clampedIndex !== newVal) {
+    activeSubTabIndex.value = clampedIndex;
+    return;
+  }
+
+  const subtab = badgeTabs.value[clampedIndex]?.slot;
   if (subtab) {
     router.replace({ query: { ...route.query, subtab } });
   }
@@ -160,21 +184,37 @@ watch(activeSubTabIndex, (newVal) => {
 watch(
   () => route.query.tab,
   (newTab) => {
-    if (newTab === "nfts" || newTab === "badges") {
-      activeMainTab.value = newTab;
-    }
+    activeMainTab.value = parseMainTab(newTab);
   }
 );
 
 watch(
   () => route.query.subtab,
   (newSubTab) => {
-    const index = badgeTabs.value.findIndex((t) => t.slot === newSubTab);
-    if (index !== -1) {
-      activeSubTabIndex.value = index;
-    }
+    const slot = parseSubTab(newSubTab);
+    const index = badgeTabs.value.findIndex((t) => t.slot === slot);
+    activeSubTabIndex.value = index === -1 ? 0 : index;
   }
 );
+
+onMounted(() => {
+  // Normalize URL so the page never ends up blank due to weird query shapes (e.g. tab[]=badges)
+  const normalizedTab = activeMainTab.value;
+  const normalizedSubtab = badgeTabs.value[activeSubTabIndex.value]?.slot ?? "owned";
+
+  const currentTab = firstQueryValue(route.query.tab);
+  const currentSubtab = firstQueryValue(route.query.subtab);
+
+  if (currentTab !== normalizedTab || currentSubtab !== normalizedSubtab) {
+    router.replace({
+      query: {
+        ...route.query,
+        tab: normalizedTab,
+        subtab: normalizedSubtab,
+      },
+    });
+  }
+});
 
 const fetchBadgeClasses = async () => {
   const url = `/api/badge/classes/list?chain_id=${useChain.chain.id}&wallet_address=${user.user?.evm_chain_address}`;
