@@ -2,7 +2,7 @@ import type { Address, Chain } from "viem";
 
 import { prepareClient } from "./utils/prepareClient";
 import { getSafeAccount, getVirtualSafeAccount } from "./account";
-import { erc20Abi, parseEther, toBytes, bytesToHex, zeroAddress } from "viem";
+import { erc20Abi, formatEther, parseEther, toBytes, bytesToHex, zeroAddress } from "viem";
 import { BUNDLER_URL, CREATE_CALL_CONTRACT, TOKEN_FACTORY_CONTRACT } from "../config";
 import CreateCallAbi from "../deploy/CreateCall.abi.json";
 import { abi as tokenFactoryAbi } from "../deploy/MinimalFactory.json";
@@ -71,24 +71,47 @@ const getGasParameters = async ({
     maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas.toString(),
   });
 
-  const gas = !!tx
-    ? await bundlerClient.estimateUserOperationGas({
-        account: smartAccount,
-        calls: [tx],
-        maxFeePerGas: gasPrice.maxFeePerGas,
-        maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas,
-      })
-    : await bundlerClient.estimateUserOperationGas({
-        account: smartAccount,
-        callData,
-        maxFeePerGas: gasPrice.maxFeePerGas,
-        maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas,
-      });
+  let gas: any;
+  try {
+    gas = !!tx
+      ? await bundlerClient.estimateUserOperationGas({
+          account: smartAccount,
+          calls: [tx],
+          maxFeePerGas: gasPrice.maxFeePerGas,
+          maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas,
+        })
+      : await bundlerClient.estimateUserOperationGas({
+          account: smartAccount,
+          callData,
+          maxFeePerGas: gasPrice.maxFeePerGas,
+          maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas,
+        });
+  } catch (error: unknown) {
+    console.error("[Gas Estimate Error]:", error);
+    throw new Error(
+      `Failed to estimate user operation gas: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
 
   console.log("[Gas Estimate]:", {
     preVerificationGas: gas.preVerificationGas.toString(),
-    verificationGasLimit: gas.verificationGasLimit.toString(),
+    verificationGasLimit: gas.verificationGasLimit?.toString?.(),
+    callGasLimit: gas.callGasLimit?.toString?.(),
+    paymasterVerificationGasLimit: gas.paymasterVerificationGasLimit?.toString?.(),
+    paymasterPostOpGasLimit: gas.paymasterPostOpGasLimit?.toString?.(),
   });
+
+  // If bundler simulation already failed, these can come back as 0 and will lead to AA23 later.
+  if (
+    typeof gas.verificationGasLimit === "bigint" &&
+    gas.verificationGasLimit === BigInt(0)
+  ) {
+    throw new Error(
+      `Bundler gas estimate returned verificationGasLimit=0. This usually means validateUserOp reverted (bad signature/nonce) or the account cannot prefund gas (no paymaster + insufficient ETH).`
+    );
+  }
 
   return {
     ...gasPrice,
@@ -107,15 +130,62 @@ const executeUserOperation = async (params: any, bundlerClient: any) => {
     return receipt as TransactionReceipt;
   } catch (error: unknown) {
     console.error("[UserOperation Error]:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    const hint =
+      msg.includes("AA23") || msg.includes("validateUserOp")
+        ? " (AA23: account validateUserOp reverted. Common causes: wrong owner/key, wrong chain/account address, nonce mismatch, or no paymaster + insufficient ETH to prefund.)"
+        : "";
+    throw new Error(`Failed to execute user operation: ${msg}${hint}`);
+  }
+};
+
+const assertAccountHasCode = async (publicClient: any, address: Address) => {
+  const bytecode = await publicClient.getBytecode({ address });
+  if (!bytecode || bytecode === "0x") {
     throw new Error(
-      `Failed to execute user operation: ${error instanceof Error ? error.message : String(error)}`
+      `Smart account ${address} has no bytecode on this chain. Either it's not deployed on this chain, or you're signing for a different address/chain.`
+    );
+  }
+};
+
+const assertCanPrefund = async (
+  publicClient: any,
+  address: Address,
+  gasParams: any,
+  sponsorFee: boolean
+) => {
+  // If using paymaster sponsorship, prefund can be covered externally.
+  if (sponsorFee) return;
+
+  const balance: bigint = await publicClient.getBalance({ address });
+  // Rough upper bound for prefund. Not perfect, but good enough for a clear UX error.
+  const maxFeePerGas: bigint | undefined = gasParams?.maxFeePerGas;
+  const callGasLimit: bigint = gasParams?.callGasLimit ?? BigInt(0);
+  const verificationGasLimit: bigint = gasParams?.verificationGasLimit ?? BigInt(0);
+  const preVerificationGas: bigint = gasParams?.preVerificationGas ?? BigInt(0);
+
+  if (typeof maxFeePerGas === "bigint" && maxFeePerGas > 0n) {
+    const estimatedGas =
+      callGasLimit + verificationGasLimit + preVerificationGas + 50_000n; // small cushion
+    const estimatedCost = estimatedGas * maxFeePerGas;
+
+    if (balance < estimatedCost) {
+      throw new Error(
+        `Insufficient ETH to prefund gas for this UserOperation. Balance=${formatEther(
+          balance
+        )} ETH, estimatedNeeded≈${formatEther(estimatedCost)} ETH. Top up the smart account or enable gas sponsorship.`
+      );
+    }
+  } else if (balance === 0n) {
+    throw new Error(
+      `Smart account has 0 ETH and gas sponsorship is off. Top up the smart account or enable gas sponsorship.`
     );
   }
 };
 
 export const transfer = async ({ to, amount, privateKey, chain, sponsorFee }: TransferOptions) => {
   const smartAccount = await getSafeAccount(privateKey, chain);
-  const { bundlerClient } = await prepareClient(chain, sponsorFee);
+  const { publicClient, bundlerClient } = await prepareClient(chain, sponsorFee);
 
   const tx = {
     to,
@@ -136,6 +206,9 @@ export const transfer = async ({ to, amount, privateKey, chain, sponsorFee }: Tr
   if (gasParams) {
     Object.assign(params, gasParams);
   }
+
+  await assertAccountHasCode(publicClient, smartAccount.address);
+  await assertCanPrefund(publicClient, smartAccount.address, gasParams, sponsorFee);
 
   return executeUserOperation(params, bundlerClient);
 };
@@ -184,6 +257,9 @@ export const transferErc20 = async ({
   if (gasParams) {
     Object.assign(params, gasParams);
   }
+
+  await assertAccountHasCode(publicClient, smartAccount.address);
+  await assertCanPrefund(publicClient, smartAccount.address, gasParams, sponsorFee);
 
   return executeUserOperation(params, bundlerClient);
 };

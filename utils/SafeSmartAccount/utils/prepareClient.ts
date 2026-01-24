@@ -17,6 +17,13 @@ export const prepareClient = async (chain: Chain, sponsorFee: boolean) => {
 
   let paymasterClient = undefined;
 
+  if (sponsorFee && (!PAYMASTER_URL[chain.id] || PAYMASTER_URL[chain.id] === "")) {
+    // Fail fast — otherwise UI may think it's sponsored but the userOp is not.
+    throw new Error(
+      `Gas sponsorship requested but PAYMASTER_URL is not configured for chain ${chain.id} (${chain.name})`
+    );
+  }
+
   if (PAYMASTER_URL[chain.id] && sponsorFee) {
     paymasterClient = createPaymasterClient({
       transport: http(PAYMASTER_URL[chain.id]),
