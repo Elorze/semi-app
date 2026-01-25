@@ -120,7 +120,7 @@ const getGasParameters = async ({
           error: 'verificationGasLimit is 0',
           href: window.location.href,
           info: detail,
-          wallet_address: smartAccount,
+          wallet_address: smartAccount.address,
         }),
       });
     } catch (error) {
