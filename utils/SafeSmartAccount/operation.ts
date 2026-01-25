@@ -282,7 +282,6 @@ export const transferErc20 = async ({
   await assertAccountHasCode(publicClient, smartAccount.address, sponsorFee);
   await assertCanPrefund(publicClient, smartAccount.address, gasParams, sponsorFee);
 
-  throw new Error("test");
   return executeUserOperation(params, bundlerClient);
 };
 
