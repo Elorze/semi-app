@@ -113,6 +113,9 @@ const getGasParameters = async ({
     try {
       fetch("/api/log-error", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           error: 'verificationGasLimit is 0',
           href: window.location.href,
