@@ -95,34 +95,24 @@ const getGasParameters = async ({
     );
   }
 
-  console.log("[Gas Estimate]:", {
+  const detail = {
     preVerificationGas: gas.preVerificationGas.toString(),
     verificationGasLimit: gas.verificationGasLimit?.toString?.(),
     callGasLimit: gas.callGasLimit?.toString?.(),
     paymasterVerificationGasLimit: gas.paymasterVerificationGasLimit?.toString?.(),
     paymasterPostOpGasLimit: gas.paymasterPostOpGasLimit?.toString?.(),
-  });
+  }
+
+  console.log("[Gas Estimate]:", detail);
 
   // If bundler simulation already failed, these can come back as 0 and will lead to AA23 later.
   if (
     typeof gas.verificationGasLimit === "bigint" &&
     gas.verificationGasLimit === BigInt(0)
   ) {
-    $fetch("/api/log-error", {
-      method: "POST",
-      body: {
-        error: 'verificationGasLimit is 0',
-        href: window.location.href,
-        info: {
-          gasPrice,
-          maxFeePerGas: gasPrice.maxFeePerGas,
-          maxPriorityFeePerGas: gasPrice.maxPriorityFeePerGas,
-        },
-        wallet_address: smartAccount,
-      },
-    });
+    
     throw new Error(
-      `Bundler gas estimate returned verificationGasLimit=0. This usually means validateUserOp reverted (bad signature/nonce) or the account cannot prefund gas (no paymaster + insufficient ETH).`
+      `Bundler gas estimate returned verificationGasLimit=0. This usually means validateUserOp reverted (bad signature/nonce) or the account cannot prefund gas (no paymaster + insufficient ETH). ${JSON.stringify(detail)}`
     );
   }
 
