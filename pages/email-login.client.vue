@@ -5,7 +5,7 @@
       color="neutral"
       variant="ghost"
       class="self-start mb-4"
-      @click="router.push('/')"
+      @click="goBack"
     >
       {{ i18n.text.Back }}
     </UButton>
@@ -54,6 +54,7 @@ definePageMeta({
 });
 
 const router = useRouter();
+const route = useRoute();
 const loading = ref(false);
 const toast = useToast();
 const i18n = useI18n();
@@ -61,6 +62,11 @@ const i18n = useI18n();
 const formState = reactive({
   email: "",
 });
+
+const goBack = () => {
+  // If coming from OAuth, still go home (OAuth state is saved in cookie)
+  router.push("/");
+};
 
 const validateEmail = (value: string) => {
   if (!value) return i18n.text["Please enter email"];
@@ -74,7 +80,12 @@ const onSubmit = async () => {
     const validation = validateEmail(formState.email);
     if (validation === true) {
       await sendEmailCode(formState.email);
-      await router.push(`/verifyemail?email=${formState.email}`);
+
+      // Check if coming from OAuth flow
+      const redirectParam = route.query.redirect as string;
+      const redirectQuery = redirectParam === "oauth" ? "?redirect=oauth" : "";
+
+      await router.push(`/verifyemail?email=${formState.email}${redirectQuery}`);
     } else {
       toast.add({
         title: i18n.text["Please enter correct email"],

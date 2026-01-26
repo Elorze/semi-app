@@ -1,6 +1,20 @@
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  const { client_id, response_type, redirect_uri, state } = query;
+  let { client_id, response_type, redirect_uri, state } = query;
+
+  // Check if there's a saved OAuth state from login redirect
+  const savedOAuthState = getCookie(event, "oauth_request_state");
+  if (savedOAuthState && !client_id) {
+    try {
+      const parsedState = JSON.parse(savedOAuthState);
+      client_id = parsedState.client_id;
+      response_type = parsedState.response_type;
+      redirect_uri = parsedState.redirect_uri;
+      state = parsedState.state;
+    } catch (e) {
+      // Invalid saved state, ignore and proceed with query params
+    }
+  }
 
   // Validate required parameters
   if (!client_id || !response_type) {
@@ -40,9 +54,44 @@ export default defineEventHandler(async (event) => {
     );
   }
 
-  // Generate access token (local auth_token)
+  // Check if user is logged in by checking auth token
+  const authToken = getCookie(event, "semi_auth_token");
+
+  if (!authToken) {
+    // User is not logged in, save OAuth request state and redirect to login
+    const oauthState = {
+      client_id,
+      response_type,
+      redirect_uri,
+      state,
+      timestamp: Date.now(),
+    };
+
+    // Save OAuth request state in cookie (expires in 10 minutes)
+    setCookie(event, "oauth_request_state", JSON.stringify(oauthState), {
+      maxAge: 600, // 10 minutes
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
+    // Redirect to login page with oauth flag
+    return sendRedirect(event, "/login?redirect=oauth");
+  }
+
+  // User is logged in, proceed with OAuth token generation
   const accessToken = generateAuthToken(event);
   const expiresIn = 3600; // 1 hour
+
+  // Clear the OAuth state cookie if it exists
+  setCookie(event, "oauth_request_state", "", {
+    maxAge: -1, // Delete cookie
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
 
   // If redirect_uri is provided, redirect with token in fragment
   if (redirect_uri) {
@@ -73,4 +122,9 @@ function generateAuthToken(event: any): string {
   if (existingToken) {
     return existingToken;
   }
+
+  // Generate a new token if not found (fallback)
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `auth_${timestamp}_${random}`;
 }
