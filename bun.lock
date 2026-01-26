@@ -26,6 +26,7 @@
         "serialize-error": "^12.0.0",
         "solar-contract-sdk": "^0.0.3",
         "tailwindcss": "^4.1.18",
+        "trackjs": "^3.10.4",
         "viem": "^2.43.3",
         "vue": "^3.5.26",
         "vue-boring-avatars": "^1.4.0",
@@ -1728,6 +1729,8 @@
     "totalist": ["totalist@3.0.1", "", {}, "sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ=="],
 
     "tr46": ["tr46@0.0.3", "", {}, "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="],
+
+    "trackjs": ["trackjs@3.10.4", "", {}, "sha512-coQkj9d7OjPmrLKj4MeLvf1U5vPD9QfXMpqVghhKnF++BlFOkA9t64ry0Usqt+8dk1tunZ9DQ5IVKLYi+3H8+w=="],
 
     "tslib": ["tslib@2.7.0", "", {}, "sha512-gLXCKdN1/j47AiHiOkJN69hJmcbGTHI0ImLmbYLHykhgeN0jVGola9yVjFgzCUklsZQMW55o+dW7IXv3RCXDzA=="],
 
