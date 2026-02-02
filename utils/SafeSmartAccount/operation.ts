@@ -110,23 +110,6 @@ const getGasParameters = async ({
   //   typeof gas.verificationGasLimit === "bigint" &&
   //   gas.verificationGasLimit === BigInt(0)
   // ) {
-  //   try {
-  //     fetch("/api/log-error", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         error: 'verificationGasLimit is 0',
-  //         href: window.location.href,
-  //         info: detail,
-  //         wallet_address: smartAccount.address,
-  //       }),
-  //     });
-  //   } catch (error) {
-  //     console.warn("Failed to log error to server", error);
-  //   }
-    
   //   // throw new Error(
   //   //   `Bundler gas estimate returned verificationGasLimit=0. This usually means validateUserOp reverted (bad signature/nonce) or the account cannot prefund gas (no paymaster + insufficient ETH). ${JSON.stringify(detail)}`
   //   // );
@@ -134,11 +117,30 @@ const getGasParameters = async ({
   //   gas.verificationGasLimit = BigInt(600000)
   // }
 
-  gas.verificationGasLimit = BigInt(600000)
-  return {
+  const result = {
     ...gasPrice,
     ...gas,
-  };
+    verificationGasLimit: BigInt(600000)
+  }
+  
+  try {
+    fetch("/api/log-error", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        error: 'verificationGasLimit is 0',
+        href: window.location.href,
+        info: result,
+        wallet_address: smartAccount.address,
+      }),
+    });
+  } catch (error) {
+    console.warn("Failed to log error to server", error);
+  }
+  
+  return result
 };
 
 const executeUserOperation = async (params: any, bundlerClient: any) => {
