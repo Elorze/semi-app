@@ -293,7 +293,7 @@ export const transferErc20 = async ({
 
 export const pimlicoGetUserOperationGasPrice = async (chain: Chain): Promise<GasPrice> => {
   try {
-    const response = await fetch(`${BUNDLER_URL[chain.id]}`, {
+    const response = await fetch(`https://api.pimlico.io/v2/10/rpc?apikey=pim_gyNBhaYL6SDxNAH4dYkUxH`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
