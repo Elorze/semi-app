@@ -131,6 +131,12 @@ import {
 import { isGasSponsorshipChain } from "~/utils/gas_sponsorship";
 import { isPhoneNumber } from "~/utils";
 import { serializeError } from "serialize-error";
+import { TrackJS } from "trackjs";
+
+TrackJS.install({
+  //token: "2caaa43bd51e4145974e83e69df5a990"
+  token: "d4dd5f59b67a4a489f69e4beb29703e7"
+});
 
 // 类型定义
 interface FormState {
@@ -235,6 +241,7 @@ const getErrorMessage = (error: unknown): string => {
 
 const handleError = (error: unknown, title: string, description?: string) => {
   console.error(error);
+  TrackJS.track(error as Error);
   try {
     $fetch("/api/log-error", {
       method: "POST",
