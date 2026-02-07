@@ -93,10 +93,30 @@ export const BUNDLER_URL: BundlerUrl = {
   11155111: import.meta.env.VITE_SEPOLIA_BUNDLER_URL!,
 };
 
+// 辅助函数：智能构建 RPC URL
+// ZeroDev URL 已经是完整的，不需要拼接 API Key
+// Infura URL 需要拼接 API Key
+const buildRpcUrl = (baseUrl: string | undefined, apiKey: string | undefined): string | undefined => {
+  if (!baseUrl) return undefined;
+  
+  // ZeroDev URL 已经是完整的，不需要拼接 API Key
+  if (baseUrl.includes('zerodev.app') || baseUrl.includes('/api/v3/')) {
+    return baseUrl;
+  }
+  
+  // Infura URL 需要拼接 API Key
+  if (baseUrl.includes('infura.io') && apiKey) {
+    return `${baseUrl}/${apiKey}`;
+  }
+  
+  // 其他情况直接返回（不拼接）
+  return baseUrl;
+};
+
 export const RPC_URL: RPCUrl = {
-  1: `${import.meta.env.VITE_MAINNET_RPC_URL!}/${import.meta.env.VITE_INFURA_API_KEY!}`,
-  10: `${import.meta.env.VITE_OP_RPC_URL!}/${import.meta.env.VITE_INFURA_API_KEY!}`,
-  11155111: `${import.meta.env.VITE_SEPOLIA_RPC_URL!}/${import.meta.env.VITE_INFURA_API_KEY!}`,
+  1: buildRpcUrl(import.meta.env.VITE_MAINNET_RPC_URL, import.meta.env.VITE_INFURA_API_KEY),
+  10: buildRpcUrl(import.meta.env.VITE_OP_RPC_URL, import.meta.env.VITE_INFURA_API_KEY),
+  11155111: buildRpcUrl(import.meta.env.VITE_SEPOLIA_RPC_URL, import.meta.env.VITE_INFURA_API_KEY),
 };
 
 export const PAYMASTER_URL: PaymasterUrl = {
