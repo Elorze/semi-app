@@ -96,6 +96,14 @@ const resendCode = async () => {
 
 onMounted(() => {
   startCountdown();
+  // 调试：输出 URL 参数
+  console.log('[verifyemail] URL query params:', {
+    email: route.query.email,
+    redirect: route.query.redirect,
+    fullQuery: route.query,
+    fullUrl: window.location.href
+  });
+  console.log('[verifyemail] Computed email value:', email.value);
 });
 
 const formState = reactive({
@@ -111,6 +119,13 @@ const validatePin = (value: string[]) => {
 
 const onSubmit = async () => {
   loading.value = true;
+  // 调试：输出提交时的值
+  console.log('[verifyemail] Submitting with:', {
+    email: email.value,
+    emailLength: email.value.length,
+    redirectParam: route.query.redirect,
+    fullQuery: route.query
+  });
   try {
     const validation = validatePin(formState.pin);
     if (validation === true) {
@@ -126,6 +141,11 @@ const onSubmit = async () => {
 
         // Check if coming from OAuth flow
         const redirectParam = route.query.redirect as string;
+        console.log('[verifyemail] OAuth check:', {
+          redirectParam,
+          isOAuth: redirectParam === "oauth",
+          willRedirectTo: redirectParam === "oauth" ? "/api/oauth/authorize" : "/"
+        });
         if (redirectParam === "oauth") {
           // Redirect back to OAuth authorize endpoint to continue the flow
           await router.push("/api/oauth/authorize");

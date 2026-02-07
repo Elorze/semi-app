@@ -5,8 +5,18 @@ export default defineEventHandler(async (event) => {
   let redirect_uri = Array.isArray(query.redirect_uri) ? query.redirect_uri[0] : query.redirect_uri;
   let state = Array.isArray(query.state) ? query.state[0] : query.state;
 
+  // 调试：输出初始参数
+  console.log('[oauth/authorize] Initial params:', {
+    client_id,
+    response_type,
+    redirect_uri,
+    state,
+    queryParams: query
+  });
+
   // Check if there's a saved OAuth state from login redirect
   const savedOAuthState = getCookie(event, "oauth_request_state");
+  console.log('[oauth/authorize] Saved OAuth state from cookie:', savedOAuthState);
   if (savedOAuthState && !client_id) {
     try {
       const parsedState = JSON.parse(savedOAuthState);
@@ -14,6 +24,13 @@ export default defineEventHandler(async (event) => {
       response_type = parsedState.response_type;
       redirect_uri = parsedState.redirect_uri;
       state = parsedState.state;
+      // 调试：输出恢复的值
+      console.log('[oauth/authorize] Restored from cookie:', {
+        client_id,
+        response_type,
+        redirect_uri,
+        state
+      });
     } catch (e) {
       console.error("Failed to parse saved OAuth state:", e);
       // Invalid saved state, ignore and proceed with query params
@@ -71,6 +88,9 @@ export default defineEventHandler(async (event) => {
       timestamp: Date.now(),
     };
 
+    // 调试：输出保存的 OAuth state
+    console.log('[oauth/authorize] Saving OAuth state to cookie:', oauthState);
+
     // Save OAuth request state in cookie (expires in 10 minutes)
     const expiryTime = new Date(Date.now() + 600 * 1000); // 10 minutes
     setCookie(event, "oauth_request_state", JSON.stringify(oauthState), {
@@ -99,7 +119,18 @@ export default defineEventHandler(async (event) => {
     if (state) {
       redirectUrl.hash += `&state=${state}`;
     }
+    // 调试：输出最终跳转的 URL
+    console.log('[oauth/authorize] Redirecting to:', redirectUrl.toString());
+    console.log('[oauth/authorize] Redirect details:', {
+      redirect_uri,
+      redirectUrl: redirectUrl.toString(),
+      hasState: !!state,
+      accessTokenLength: accessToken.length
+    });
     return sendRedirect(event, redirectUrl.toString());
+  } else {
+    // 调试：没有 redirect_uri 的情况
+    console.log('[oauth/authorize] No redirect_uri provided, returning token directly');
   }
 
   // Otherwise return token directly
