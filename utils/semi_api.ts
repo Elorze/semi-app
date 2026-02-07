@@ -40,7 +40,7 @@ interface RemainingGasCreditsResponse extends BaseResponse {
 }
 
 // API 基础配置
-export const API_BASE_URL = "https://semi.fly.dev";
+export const API_BASE_URL = "https://testsemi.ntdao.xyz";
 export const AUTH_TOKEN_KEY = "semi_auth_token";
 
 const MOCK_RESPONSE = false;
