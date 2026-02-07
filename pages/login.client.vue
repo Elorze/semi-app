@@ -81,9 +81,15 @@ const onSubmit = async () => {
 
       // Check if coming from OAuth flow
       const redirectParam = route.query.redirect as string;
-      const redirectQuery = redirectParam === "oauth" ? "?redirect=oauth" : "";
-
-      await router.push(`/verifyphone?phone=${formState.phone}${redirectQuery}`);
+      
+      // 使用查询参数对象而不是字符串拼接
+      await router.push({
+        path: '/verifyphone',
+        query: {
+          phone: formState.phone,
+          ...(redirectParam === 'oauth' ? { redirect: 'oauth' } : {})
+        }
+      });
     } else {
       toast.add({
         title: i18n.text["Please enter correct phone number"],
