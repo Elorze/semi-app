@@ -1,12 +1,7 @@
 <template>
   <div class="flex flex-col container-size rounded-xl bg-[var(--ui-bg)] shadow-lg p-4">
-    <UButton
-      icon="i-heroicons-arrow-left"
-      color="neutral"
-      variant="ghost"
-      class="self-start mb-4"
-      @click="router.push('/')"
-    >
+    <UButton icon="i-heroicons-arrow-left" color="neutral" variant="ghost" class="self-start mb-4"
+      @click="router.push('/')">
       {{ i18n.text["Back"] }}
     </UButton>
     <div class="flex flex-col items-center justify-center h-full gap-4 pb-8 w-[80%] mx-auto">
@@ -17,25 +12,12 @@
         <UForm :state="formState" @submit="onSubmit" class="w-full">
           <UFormField name="to" :label="i18n.text['Recipient (supports address or phone number)']">
             <div class="flex items-start flex-row gap-2">
-              <UTextarea
-                size="xl"
-                class="w-full"
-                variant="subtle"
-                :rows="5"
-                v-model="formState.to"
-                :placeholder="i18n.text['Please enter recipient address/phone number']"
-                :ui="{ base: 'w-full' }"
-                :disabled="initializing"
-              />
+              <UTextarea size="xl" class="w-full" variant="subtle" :rows="5" v-model="formState.to"
+                :placeholder="i18n.text['Please enter recipient address/phone number']" :ui="{ base: 'w-full' }"
+                :disabled="initializing" />
               <div class="flex flex-col gap-2">
-                <UButton
-                  icon="ci:close-md"
-                  color="neutral"
-                  variant="subtle"
-                  size="xl"
-                  class="text-2xl cursor-pointer"
-                  @click="formState.to = ''"
-                >
+                <UButton icon="ci:close-md" color="neutral" variant="subtle" size="xl" class="text-2xl cursor-pointer"
+                  @click="formState.to = ''">
                 </UButton>
                 <ScanQrcodeBtn @onDetect="handleQrCodeDetect" />
                 <ContactsButton @onSelect="handleContactSelect" />
@@ -45,54 +27,34 @@
 
           <UFormField name="amount" :label="i18n.text['Send Amount']" class="mt-4">
             <div class="flex items-center gap-2">
-              <TokenSwitch
-                :token-list="tokenList"
-                v-model="formState.token"
-                v-if="formState.token"
-              />
-              <UInput
-                variant="subtle"
-                size="xl"
-                class="w-full flex-1"
-                v-model="formState.amount"
-                :placeholder="i18n.text['Please enter send amount']"
-                :ui="{ base: 'w-full' }"
-                :disabled="initializing || !balance"
-              />
+              <TokenSwitch :token-list="tokenList" v-model="formState.token" v-if="formState.token" />
+              <UInput variant="subtle" size="xl" class="w-full flex-1" v-model="formState.amount"
+                :placeholder="i18n.text['Please enter send amount']" :ui="{ base: 'w-full' }"
+                :disabled="initializing || !balance" />
             </div>
           </UFormField>
 
           <UFormField name="memo" :label="i18n.text['Memo(optional)']" class="mt-4">
-            <UInput
-                variant="subtle"
-                size="xl"
-                class="w-full flex-1"
-                v-model="formState.memo"
-                :placeholder="i18n.text['Please enter memo']"
-                :ui="{ base: 'w-full' }"
-                :disabled="initializing"
-              />
+            <UInput variant="subtle" size="xl" class="w-full flex-1" v-model="formState.memo"
+              :placeholder="i18n.text['Please enter memo']" :ui="{ base: 'w-full' }" :disabled="initializing"
+              :maxlength="REMARK_MAX_CHARS" />
+            <p class="text-gray-500 text-xs mt-1">已输入 {{ formState.memo.length }} / {{ REMARK_MAX_CHARS }} 字</p>
           </UFormField>
 
           <UFormField name="senderNote" :label="i18n.text['Sender Note']" class="mt-4">
-            <UInput
-                variant="subtle"
-                size="xl"
-                class="w-full flex-1"
-                v-model="formState.senderNote"
-                :placeholder="i18n.text['Please enter sender note']"
-                :ui="{ base: 'w-full' }"
-                :disabled="initializing"
-              />
+            <UInput variant="subtle" size="xl" class="w-full flex-1" v-model="formState.senderNote"
+              :placeholder="i18n.text['Please enter sender note']" :ui="{ base: 'w-full' }" :disabled="initializing" />
           </UFormField>
 
+          <UFormField name="metadata" :label="i18n.text['Metadata']" class="mt-4" v-if="formState.metadata">
+            <UInput variant="subtle" size="xl" class="w-full flex-1" v-model="formState.metadata"
+              :placeholder="i18n.text['Metadata']" :ui="{ base: 'w-full' }" :disabled="true" />
+          </UFormField>
 
           <div class="mt-4">
             <div class="text-gray-400 text-sm">{{ i18n.text["Balance"] }}</div>
             <div class="flex items-center gap-2">
-              <span class="text-3xl font-bold" v-if="initializing"
-                >-- {{ formState.token?.symbol }}</span
-              >
+              <span class="text-3xl font-bold" v-if="initializing">-- {{ formState.token?.symbol }}</span>
               <span class="text-3xl font-bold" v-else>
                 {{ displayBalance(balance, 6, formState.token?.decimals) }}
                 {{ formState.token?.symbol }}
@@ -100,14 +62,8 @@
             </div>
           </div>
 
-          <UButton
-            type="submit"
-            color="primary"
-            class="w-full mt-4 flex justify-center items-center"
-            size="xl"
-            :loading="initializing || loading"
-            :disabled="initializing || loading || !isFormValid || !balance"
-          >
+          <UButton type="submit" color="primary" class="w-full mt-4 flex justify-center items-center" size="xl"
+            :loading="initializing || loading" :disabled="initializing || loading || !isFormValid || !balance">
             {{ i18n.text["Next"] }}
           </UButton>
         </UForm>
@@ -123,16 +79,8 @@
 
         <UForm :state="formState" @submit="onSubmit" class="w-full">
           <UFormField name="code">
-            <UPinInput
-              variant="subtle"
-              type="number"
-              v-model="formState.code"
-              :length="6"
-              size="xl"
-              class="w-full"
-              :ui="{ base: 'w-full' }"
-              mask
-            />
+            <UPinInput variant="subtle" type="number" v-model="formState.code" :length="6" size="xl" class="w-full"
+              :ui="{ base: 'w-full' }" mask />
           </UFormField>
 
           <div class="text-gray-400 text-sm mt-3" v-if="formState.gasEstimate !== '0'">
@@ -140,12 +88,10 @@
               {{ i18n.text["Estimated Fee"] }}
               <FeeTipPopup />
             </span>
-            <span
-              :class="[
-                'font-bold text-base text-foreground',
-                formState.remainingFreeTransactions > 0 ? 'line-through' : '',
-              ]"
-            >
+            <span :class="[
+              'font-bold text-base text-foreground',
+              formState.remainingFreeTransactions > 0 ? 'line-through' : '',
+            ]">
               {{ formState.gasEstimate }} Gwei
             </span>
           </div>
@@ -158,24 +104,12 @@
           </div>
 
           <div class="flex gap-4 mt-4">
-            <UButton
-              type="button"
-              color="neutral"
-              class="flex-1 flex justify-center items-center"
-              size="xl"
-              :disabled="loading"
-              @click="handleReset"
-            >
+            <UButton type="button" color="neutral" class="flex-1 flex justify-center items-center" size="xl"
+              :disabled="loading" @click="handleReset">
               {{ i18n.text["Previous"] }}
             </UButton>
-            <UButton
-              type="submit"
-              color="primary"
-              class="flex-1 flex justify-center items-center"
-              size="xl"
-              :loading="loading"
-              :disabled="loading || !isCodeComplete"
-            >
+            <UButton type="submit" color="primary" class="flex-1 flex justify-center items-center" size="xl"
+              :loading="loading" :disabled="loading || !isCodeComplete">
               {{ i18n.text["Confirm"] }}
             </UButton>
           </div>
@@ -192,7 +126,7 @@ import { useUserStore } from "@/stores/user";
 import { getBalance, getErc20Balance } from "~/utils/balance";
 import { predictSafeAccountAddress, transfer, transferErc20 } from "~/utils/SafeSmartAccount";
 import { displayBalance } from "~/utils/display";
-import { isAddress, zeroAddress } from "viem";
+import { hexToBigInt, isAddress, keccak256, toBytes, zeroAddress } from "viem";
 import { keystoreToPrivateKey } from "~/utils/encryption";
 import {
   getUserByHandleOrPhone,
@@ -203,6 +137,21 @@ import {
 import { isGasSponsorshipChain } from "~/utils/gas_sponsorship";
 import { isPhoneNumber } from "~/utils";
 import { serializeError } from "serialize-error";
+import { REMARK_PROXY_ADDRESS } from "~/utils/config";
+import { remarkProxyAbi, REMARK_MAX_CHARS } from "~/utils/remarkContract";
+let trackJsTrack: ((error: Error) => void) | null = null;
+
+const initTrackJs = async () => {
+  try {
+    const { TrackJS } = await import("trackjs");
+    TrackJS.install({
+      token: "41669e16206a432f8bb61b64ac3cd43f",
+    });
+    trackJsTrack = (error: Error) => TrackJS.track(error);
+  } catch (error) {
+    console.warn("TrackJS unavailable; continuing without client error tracking.", error);
+  }
+};
 
 // 类型定义
 interface FormState {
@@ -214,8 +163,13 @@ interface FormState {
   memo: string;
   senderNote: string;
   receiverNote: string;
+  metadata: string;
   remainingFreeTransactions: number;
   gasEstimate: string;
+  /** bai: task_info_id UUID (pool) */
+  poolUuid: string;
+  /** bai: task row id UUID (task) */
+  taskUuid: string;
 }
 
 interface TransferParams {
@@ -225,7 +179,13 @@ interface TransferParams {
   chain: any;
   erc20TokenAddress?: `0x${string}`;
   sponsorFee: boolean;
+  optionalCalls?: any[];
 }
+
+// 解决BigInt序列化问题
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
 
 // 常量
 const CODE_LENGTH = 6;
@@ -256,6 +216,9 @@ const formState = reactive<FormState>({
   memo: "",
   senderNote: "",
   receiverNote: "",
+  metadata: "",
+  poolUuid: "",
+  taskUuid: "",
 });
 
 // 计算属性
@@ -302,6 +265,9 @@ const getErrorMessage = (error: unknown): string => {
 
 const handleError = (error: unknown, title: string, description?: string) => {
   console.error(error);
+  if (error instanceof Error) {
+    trackJsTrack?.(error);
+  }
   try {
     $fetch("/api/log-error", {
       method: "POST",
@@ -330,6 +296,9 @@ const resetForm = () => {
   formState.code = [...DEFAULT_CODE];
   formState.senderNote = "";
   formState.receiverNote = "";
+  formState.poolUuid = "";
+  formState.taskUuid = "";
+  // Note: metadata is not reset here as it comes from URL params
 };
 
 // 业务逻辑函数
@@ -347,10 +316,10 @@ const fetchTokenBalance = async () => {
       formState.token.address === zeroAddress
         ? await getBalance(predictSafeAddress, useChain.chain)
         : await getErc20Balance(
-            predictSafeAddress,
-            formState.token.address as `0x${string}`,
-            useChain.chain
-          );
+          predictSafeAddress,
+          formState.token.address as `0x${string}`,
+          useChain.chain
+        );
   } catch (error) {
     handleError(error, i18n.text["Get balance failed"]);
   } finally {
@@ -438,6 +407,44 @@ const handleTokenTransfer = async () => {
       sponsorFee: isGasSponsorshipChain(useChain.chain.id) && formState.remainingFreeTransactions > 0,
     };
 
+    const proxyAddress = REMARK_PROXY_ADDRESS[useChain.chain.id];
+    const publicRemark = (formState.memo ?? "").trim().slice(0, REMARK_MAX_CHARS);
+    const receiverRemark = (formState.receiverNote ?? "").trim().slice(0, REMARK_MAX_CHARS);
+
+    const uuidToU256 = (uuid: string): bigint => {
+      return hexToBigInt(keccak256(toBytes(uuid)));
+    };
+
+    const poolUuid = formState.poolUuid?.trim();
+    const taskUuid = formState.taskUuid?.trim();
+    const hasAnyRemark = Boolean(publicRemark || receiverRemark);
+
+    // Two modes:
+    // - task mode (bai): pool_uuid + task_uuid -> derive uint256 ids
+    // - normal transfer: generate a unique id per transfer (remarkUuid), so each transfer can write remarks on-chain
+    let poolId: bigint | undefined;
+    let taskId: bigint | undefined;
+    if (poolUuid && taskUuid) {
+      poolId = uuidToU256(poolUuid);
+      taskId = uuidToU256(taskUuid);
+    } else if (hasAnyRemark) {
+      const remarkUuid = crypto.randomUUID();
+      const remarkId = uuidToU256(remarkUuid);
+      poolId = remarkId;
+      taskId = remarkId;
+    }
+
+    if (proxyAddress && poolId !== undefined && taskId !== undefined && hasAnyRemark) {
+      transferParams.optionalCalls = [
+        {
+          to: proxyAddress as `0x${string}`,
+          abi: remarkProxyAbi,
+          functionName: "saveRemark",
+          args: [poolId, taskId, publicRemark, receiverRemark],
+        },
+      ];
+    }
+
     // 如果是ERC20代币，添加代币地址
     if (formState.token.address !== zeroAddress) {
       transferParams.erc20TokenAddress = formState.token.address as `0x${string}`;
@@ -446,11 +453,6 @@ const handleTokenTransfer = async () => {
     const receipt = await (formState.token.address === zeroAddress
       ? transfer(transferParams)
       : transferErc20(transferParams));
-
-    // 解决BigInt序列化问题
-    (BigInt.prototype as any).toJSON = function () {
-      return this.toString();
-    };
 
     const uploadData = {
       tx_hash: receipt.receipt.transactionHash,
@@ -463,6 +465,7 @@ const handleTokenTransfer = async () => {
       receiver_note: formState.receiverNote,
       sender_address: user.user?.evm_chain_address || "",
       receiver_address: formState.recipient as string,
+      metadata: formState.metadata || undefined,
     };
 
     if (transferParams.sponsorFee) {
@@ -486,7 +489,7 @@ const handleTokenTransfer = async () => {
 };
 
 const initForm = async () => {
-  const { to, amount, chain_id, token_address } = route.query;
+  const { to, amount, chain_id, token_address, metadata } = route.query;
 
   // 处理链ID
   if (chain_id && typeof chain_id === "string") {
@@ -544,6 +547,29 @@ const initForm = async () => {
         i18n.text["Amount in URL must be a number greater than 0"]
       );
     }
+  }
+
+  // 处理metadata
+  if (metadata && typeof metadata === "string") {
+    formState.metadata = metadata;
+  }
+
+  // 处理 task_id、备注（bai 跳转传入，统一通过 URL 传递，不依赖 bai 后端）
+  const pool_uuid = route.query.pool_uuid;
+  const task_uuid = route.query.task_uuid;
+  const task_id = route.query.task_id; // backward compat: old param name for task row uuid
+  const memo = route.query.memo;
+  const receiver_remark = route.query.receiver_remark;
+  if (pool_uuid && typeof pool_uuid === "string") formState.poolUuid = pool_uuid;
+  if (task_uuid && typeof task_uuid === "string") formState.taskUuid = task_uuid;
+  // backward compat: if only task_id is provided, treat it as task_uuid
+  if (!formState.taskUuid && task_id && typeof task_id === "string") formState.taskUuid = task_id;
+
+  if (memo && typeof memo === "string") {
+    formState.memo = memo.slice(0, REMARK_MAX_CHARS);
+  }
+  if (receiver_remark && typeof receiver_remark === "string") {
+    formState.receiverNote = receiver_remark.slice(0, REMARK_MAX_CHARS);
   }
 };
 
@@ -608,5 +634,8 @@ const handleReset = () => {
 watch(() => formState.token, fetchTokenBalance, { immediate: true });
 
 // 生命周期
-onMounted(initForm);
+onMounted(async () => {
+  await initTrackJs();
+  await initForm();
+});
 </script>
